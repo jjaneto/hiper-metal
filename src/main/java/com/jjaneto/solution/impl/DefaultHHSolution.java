@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class DefaultHHSolution extends AbstractGenericSolution<Integer, AbstractGrammaticalEvolutionProblem<?>> implements IntegerSolution {
 
-    public DefaultHHSolution(AbstractGrammaticalEvolutionProblem<?> problem) {
+    public DefaultHHSolution(AbstractGrammaticalEvolutionProblem problem) {
         super(problem);
     }
 
