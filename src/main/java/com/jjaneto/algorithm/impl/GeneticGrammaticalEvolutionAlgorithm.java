@@ -6,11 +6,15 @@ import com.jjaneto.operators.mutation.PruneMutation;
 import com.jjaneto.problem.AbstractGrammaticalEvolutionProblem;
 import com.jjaneto.solution.impl.DefaultHHSolution;
 import org.uma.jmetal.problem.Problem;
+import org.uma.jmetal.util.comparator.ObjectiveComparator;
 import org.uma.jmetal.util.evaluator.SolutionListEvaluator;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,8 +27,9 @@ public class GeneticGrammaticalEvolutionAlgorithm
     private int populationSize;
     private final String outputFile;
 
-    private SolutionListEvaluator<DefaultHHSolution> evaluator;
     private AbstractGrammaticalEvolutionProblem problem;
+    private Comparator<DefaultHHSolution> comparator;
+    private SolutionListEvaluator<DefaultHHSolution> evaluator;
 
     public GeneticGrammaticalEvolutionAlgorithm(Problem<DefaultHHSolution> problem,
                                                 int evaluations,
@@ -46,6 +51,8 @@ public class GeneticGrammaticalEvolutionAlgorithm
         this.pruneMutationOperator = pruneMutation;
         this.duplicationMutationOperator = duplicationMutation;
 
+        comparator = new ObjectiveComparator<>(0);
+
         new File(outputFile).getParentFile().mkdirs();
     }
 
@@ -63,13 +70,26 @@ public class GeneticGrammaticalEvolutionAlgorithm
     }
 
     @Override
-    protected void initProgress() {
+    protected List<DefaultHHSolution> createInitialPopulation() {
+        List<DefaultHHSolution> population = new ArrayList<>(populationSize);
+        for (int i = 0; i < populationSize; i++) {
+            DefaultHHSolution newIndividual = problem.createSolution();
+            population.add(newIndividual);
+            newIndividual.setAttribute("FoundIn", 1);
+        }
+        return population;
+    }
 
+    @Override
+    protected void initProgress() {
+        printProgress();
+        evaluations = populationSize;
     }
 
     @Override
     protected void updateProgress() {
-
+        printProgress();
+        evaluations += populationSize;
     }
 
     @Override
@@ -78,18 +98,26 @@ public class GeneticGrammaticalEvolutionAlgorithm
     }
 
     @Override
-    protected List evaluatePopulation(List population) {
-        return null;
+    protected List<DefaultHHSolution> evaluatePopulation(List<DefaultHHSolution> population) {
+        population = evaluator.evaluate(population, problem);
+
+        return population;
     }
 
     @Override
-    protected List replacement(List population, List offspringPopulation) {
-        return null;
+    protected List<DefaultHHSolution> replacement(List<DefaultHHSolution> population, List<DefaultHHSolution> offspringPopulation) {
+        List<DefaultHHSolution> jointPopulation = new ArrayList<>();
+        jointPopulation.addAll(population);
+        jointPopulation.addAll(offspringPopulation);
+        Collections.sort(jointPopulation, comparator);
+
+        return jointPopulation.subList(0, populationSize);
     }
 
     @Override
     public DefaultHHSolution getResult() {
-        return null;
+        Collections.sort(getPopulation(), comparator);
+        return getPopulation().get(0);
     }
 
     @Override
@@ -112,6 +140,28 @@ public class GeneticGrammaticalEvolutionAlgorithm
 
     @Override
     public void run() {
+        List<DefaultHHSolution> offspringPopulation;
+        List<DefaultHHSolution> matingPopulation;
 
+        setPopulation(createInitialPopulation());
+
+        //Execute the algorithm
+        evaluatePopulation(getPopulation());
+        //Calculate the Hypervolume (fitness)
+        problem.evaluateAll(getPopulation(), Collections.emptyList());
+
+        initProgress();
+        while (!isStoppingConditionReached()) {
+            matingPopulation = selection(getPopulation());
+            offspringPopulation = reproduction(matingPopulation);
+
+            //Execute the algorithm
+            evaluatePopulation(offspringPopulation);
+            //Calculate the Hypervolume (fitness)
+            problem.evaluateAll(getPopulation(), offspringPopulation);
+
+            setPopulation(replacement(getPopulation(), offspringPopulation));
+            updateProgress();
+        }
     }
 }

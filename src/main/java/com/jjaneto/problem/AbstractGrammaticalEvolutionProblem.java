@@ -4,6 +4,8 @@ import com.jjaneto.mapper.AbstractGrammarMapper;
 import com.jjaneto.solution.impl.DefaultHHSolution;
 import org.uma.jmetal.problem.impl.AbstractGenericProblem;
 
+import java.util.List;
+
 public abstract class AbstractGrammaticalEvolutionProblem<MapperReturn> extends AbstractGenericProblem<DefaultHHSolution> {
 
     private AbstractGrammarMapper<MapperReturn> mapper;
@@ -25,6 +27,8 @@ public abstract class AbstractGrammaticalEvolutionProblem<MapperReturn> extends 
     public DefaultHHSolution createSolution() {
         return null;
     }
+
+    public abstract void evaluateAll(List<DefaultHHSolution> parents, List<DefaultHHSolution> offspring);
 
     // <editor-fold desc="Getters and Setters">
     public AbstractGrammarMapper<MapperReturn> getMapper() {
