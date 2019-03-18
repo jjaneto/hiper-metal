@@ -30,6 +30,9 @@ public abstract class AbstractGrammaticalEvolutionProblem<MapperReturn> extends 
 
     public abstract void evaluateAll(List<DefaultHHSolution> parents, List<DefaultHHSolution> offspring);
 
+    @Override
+    public abstract void evaluate(DefaultHHSolution solution);
+
     // <editor-fold desc="Getters and Setters">
     public AbstractGrammarMapper<MapperReturn> getMapper() {
         return mapper;
